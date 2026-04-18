@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#0f0f10" />
-  <meta name="description" content="A simple, honest gym tracker. Log your lifts, plan tomorrow, own your data." />
-  <title>Lift — Simple gym tracker</title>
+  <meta name="description" content="RepBot — a simple, honest gym tracker. Log your lifts, plan tomorrow, own your data." />
+  <title>RepBot</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon-192.png" />
@@ -13,14 +13,13 @@
 </head>
 <body>
   <div id="app">
-    <!-- Header -->
     <header class="app-header">
       <div class="app-header-inner">
         <div class="brand">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M6 10v4M4 11v2M18 10v4M20 11v2M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
-          <span>Lift</span>
+          <span id="page-title">RepBot</span>
         </div>
         <button id="menu-btn" class="icon-btn" aria-label="Menu">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -32,13 +31,12 @@
       </div>
     </header>
 
-    <!-- Menu sheet -->
     <div id="menu-sheet" class="sheet" hidden>
-      <div class="sheet-backdrop"></div>
+      <div class="sheet-backdrop" data-close-menu></div>
       <div class="sheet-panel">
         <div class="sheet-header">
           <h3>Settings</h3>
-          <button class="icon-btn" id="menu-close" aria-label="Close">
+          <button class="icon-btn" data-close-menu aria-label="Close">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           </button>
         </div>
@@ -67,9 +65,7 @@
               <option value="300">5m</option>
             </select>
           </div>
-
           <div class="sheet-divider"></div>
-
           <button class="row-btn" id="export-btn">
             <span>Download data (CSV)</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -79,24 +75,18 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 21V9m0 0l-4 4m4-4l4 4M5 3h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <input type="file" id="import-file" accept=".csv" hidden />
-
           <div class="sheet-divider"></div>
-
           <button class="row-btn row-btn-danger" id="wipe-btn">
             <span>Delete all data</span>
           </button>
-
-          <div class="sheet-divider"></div>
-
           <div class="sheet-footer">
-            <div>Lift v0.1 • beta</div>
+            <div>RepBot v0.1 • beta</div>
             <div>Your data stays on this device.</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Rest timer banner -->
     <div id="rest-banner" class="rest-banner" hidden>
       <div class="rest-banner-inner">
         <div class="rest-timer-text">Rest <span id="rest-remaining">1:30</span></div>
@@ -108,18 +98,8 @@
       <div class="rest-progress"><div id="rest-progress-bar"></div></div>
     </div>
 
-    <!-- Main views -->
     <main>
-      <!-- TODAY -->
       <section id="view-today" class="view">
-        <div id="plan-prompt" class="plan-prompt" hidden>
-          <div class="plan-prompt-text">
-            <div class="plan-prompt-title">You planned today</div>
-            <div class="plan-prompt-body" id="plan-summary"></div>
-          </div>
-          <button id="load-plan-btn" class="btn btn-primary">Load</button>
-        </div>
-
         <div class="stats-row">
           <div class="stat">
             <div class="stat-label">This week</div>
@@ -151,6 +131,14 @@
           <span class="section-date" id="today-date"></span>
         </div>
 
+        <div id="plan-prompt" class="plan-prompt" hidden>
+          <div class="plan-prompt-text">
+            <div class="plan-prompt-title">You planned this</div>
+            <div class="plan-prompt-body" id="plan-summary"></div>
+          </div>
+          <button id="load-plan-btn" class="btn btn-primary btn-sm">Load plan</button>
+        </div>
+
         <div id="exercise-list" class="exercise-list"></div>
 
         <div id="empty-state" class="empty-state" hidden>
@@ -172,7 +160,6 @@
         </div>
       </section>
 
-      <!-- PLAN -->
       <section id="view-plan" class="view" hidden>
         <div class="section-header">
           <h2>Plan for tomorrow</h2>
@@ -194,7 +181,6 @@
         <div id="copy-from-recent"></div>
       </section>
 
-      <!-- PROGRESS -->
       <section id="view-progress" class="view" hidden>
         <div class="section-header"><h2>Progress</h2></div>
         <label for="progress-select" class="field-label">Exercise</label>
@@ -208,7 +194,6 @@
         </div>
       </section>
 
-      <!-- GOALS -->
       <section id="view-goals" class="view" hidden>
         <div class="section-header"><h2>Goals</h2></div>
         <div id="goals-list" class="goals-list"></div>
@@ -225,40 +210,37 @@
         </div>
       </section>
 
-      <!-- HISTORY -->
       <section id="view-history" class="view" hidden>
         <div class="section-header"><h2>History</h2></div>
         <div id="history-list" class="history-list"></div>
       </section>
     </main>
 
-    <!-- Bottom nav -->
-    <nav class="bottom-nav" role="tablist">
-     <div class="bottom-nav-inner">
-      <button class="nav-btn nav-active" data-tab="today" role="tab" aria-selected="true">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 10v4M4 11v2M18 10v4M20 11v2M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <span>Today</span>
-      </button>
-      <button class="nav-btn" data-tab="plan" role="tab" aria-selected="false">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M4 9h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <span>Plan</span>
-      </button>
-      <button class="nav-btn" data-tab="progress" role="tab" aria-selected="false">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 18L9 13L13 17L20 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 10h6v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span>Progress</span>
-      </button>
-      <button class="nav-btn" data-tab="goals" role="tab" aria-selected="false">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
-        <span>Goals</span>
-      </button>
-      <button class="nav-btn" data-tab="history" role="tab" aria-selected="false">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <span>History</span>
-      </button>
-     </div>
+    <nav class="bottom-nav" id="bottom-nav" role="tablist">
+      <div class="bottom-nav-inner">
+        <a class="nav-btn" data-tab="today" href="#today" role="tab">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 10v4M4 11v2M18 10v4M20 11v2M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Today</span>
+        </a>
+        <a class="nav-btn" data-tab="plan" href="#plan" role="tab">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M4 9h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Plan</span>
+        </a>
+        <a class="nav-btn" data-tab="progress" href="#progress" role="tab">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 18L9 13L13 17L20 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 10h6v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Progress</span>
+        </a>
+        <a class="nav-btn" data-tab="goals" href="#goals" role="tab">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+          <span>Goals</span>
+        </a>
+        <a class="nav-btn" data-tab="history" href="#history" role="tab">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>History</span>
+        </a>
+      </div>
     </nav>
 
-    <!-- Toast -->
     <div id="toast" class="toast" hidden></div>
   </div>
 

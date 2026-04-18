@@ -1,5 +1,5 @@
-// Lift — Service worker for offline support
-const CACHE = 'lift-v1';
+// RepBot — Service worker for offline support
+const CACHE = 'repbot-v2';
 const ASSETS = [
   './',
   './index.html',

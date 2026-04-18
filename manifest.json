@@ -1,7 +1,7 @@
 {
-  "name": "Lift — Simple gym tracker",
-  "short_name": "Lift",
-  "description": "A simple, honest gym tracker. Log your lifts, plan tomorrow, own your data.",
+  "name": "RepBot — Simple gym tracker",
+  "short_name": "RepBot",
+  "description": "RepBot — a simple, honest gym tracker. Log your lifts, plan tomorrow, own your data.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

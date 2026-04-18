@@ -144,6 +144,9 @@ main { padding: 16px 16px 24px; }
   font-weight: 500;
   transition: color 0.15s;
   -webkit-tap-highlight-color: transparent;
+  text-decoration: none;
+  user-select: none;
+  cursor: pointer;
 }
 .nav-btn svg { opacity: 0.9; }
 .nav-btn.nav-active { color: var(--accent); }

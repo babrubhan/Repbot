@@ -1,37 +1,63 @@
-/* Lift — Simple gym tracker
- * State lives in localStorage. No server, no account.
+/* RepBot — Simple gym tracker
+ * State in localStorage. No server, no account.
+ * Hash-based routing (#today, #plan, #progress, #goals, #history)
+ * so back button, deep links, and page titles work like multi-page.
  */
 
 (function() {
   'use strict';
 
-  // ===== State =====
-  const STORAGE_KEY = 'lift_v1';
+  const STORAGE_KEY = 'repbot_v1';
+  const TABS = ['today', 'plan', 'progress', 'goals', 'history'];
+  const TAB_TITLES = {
+    today: 'RepBot',
+    plan: 'Plan',
+    progress: 'Progress',
+    goals: 'Goals',
+    history: 'History'
+  };
+  const TAB_DOC_TITLES = {
+    today: 'RepBot',
+    plan: 'Plan — RepBot',
+    progress: 'Progress — RepBot',
+    goals: 'Goals — RepBot',
+    history: 'History — RepBot'
+  };
+
   let state = {
-    workouts: [],      // [{date, exercises: [{name, sets: [{weight, reps, done}]}]}]
-    current: null,     // {date, exercises: [...]}
-    plans: {},         // {dateKey: [exerciseName]}
-    goals: [],         // [{name, target}]
-    settings: {
-      unit: 'kg',
-      restDefault: 90
-    }
+    workouts: [],
+    current: null,
+    plans: {},
+    goals: [],
+    settings: { unit: 'kg', restDefault: 90 }
   };
 
   let charts = { weekly: null, progress: null };
   let restTimer = { endsAt: 0, total: 0, interval: null };
-  let lastPRCheck = {}; // exerciseName -> last known PR, to detect new ones
+  let lastPRCheck = {};
+  let currentTab = 'today';
 
-  // ===== Persistence =====
+  // Attempt legacy migration: users who tried v1 under lift_v1
+  function migrateLegacy() {
+    try {
+      const legacy = localStorage.getItem('lift_v1');
+      const existing = localStorage.getItem(STORAGE_KEY);
+      if (legacy && !existing) {
+        localStorage.setItem(STORAGE_KEY, legacy);
+      }
+    } catch (e) {}
+  }
+
   function save() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
-      showToast('Storage full — export CSV to save');
+      showToast('Storage full — export CSV to back up');
     }
   }
 
   function load() {
+    migrateLegacy();
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -43,34 +69,27 @@
       console.error('Failed to load state', e);
     }
 
-    // Archive stale current workout (from a previous day)
     if (state.current && state.current.date !== todayKey()) {
-      if (state.current.exercises.length > 0) {
-        // Only archive if it has at least one completed set
-        const hasData = state.current.exercises.some(ex =>
-          ex.sets.some(s => s.weight > 0 && s.reps > 0)
-        );
-        if (hasData) {
-          // Clean empty sets before archiving
-          state.current.exercises.forEach(ex => {
-            ex.sets = ex.sets.filter(s => s.weight > 0 && s.reps > 0);
-          });
-          state.current.exercises = state.current.exercises.filter(ex => ex.sets.length > 0);
-          if (state.current.exercises.length > 0) {
-            state.workouts.push(state.current);
-          }
+      const hasData = state.current.exercises.some(ex =>
+        ex.sets.some(s => s.weight > 0 && s.reps > 0)
+      );
+      if (hasData) {
+        state.current.exercises.forEach(ex => {
+          ex.sets = ex.sets.filter(s => s.weight > 0 && s.reps > 0);
+        });
+        state.current.exercises = state.current.exercises.filter(ex => ex.sets.length > 0);
+        if (state.current.exercises.length > 0) {
+          state.workouts.push(state.current);
         }
       }
       state.current = null;
     }
 
-    // Clean up old plans (before today)
     const today = todayKey();
     Object.keys(state.plans).forEach(k => {
       if (k < today) delete state.plans[k];
     });
 
-    // Seed PR tracking
     getAllExerciseNames().forEach(name => {
       lastPRCheck[name] = getPersonalBest(name) || 0;
     });
@@ -78,15 +97,12 @@
     save();
   }
 
-  // ===== Date utils =====
   function keyFromDate(d) {
     return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   }
   function todayKey() { return keyFromDate(new Date()); }
   function tomorrowKey() {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return keyFromDate(d);
+    const d = new Date(); d.setDate(d.getDate() + 1); return keyFromDate(d);
   }
   function formatDate(key) {
     const [y, m, d] = key.split('-');
@@ -99,9 +115,12 @@
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
-  // ===== Current workout helpers =====
   function ensureCurrent() {
     if (!state.current) state.current = { date: todayKey(), exercises: [] };
+  }
+
+  function hasLoggedSets(workout) {
+    return workout.exercises.some(ex => ex.sets.some(s => s.weight > 0 && s.reps > 0));
   }
 
   function calcVolume(workout) {
@@ -124,10 +143,6 @@
       d.setDate(d.getDate() - 1);
     }
     return streak;
-  }
-
-  function hasLoggedSets(workout) {
-    return workout.exercises.some(ex => ex.sets.some(s => s.weight > 0 && s.reps > 0));
   }
 
   function weekWorkouts() {
@@ -156,11 +171,7 @@
       d.setDate(today.getDate() - i);
       const key = keyFromDate(d);
       const vol = all.filter(w => w.date === key).reduce((s, w) => s + calcVolume(w), 0);
-      result.push({
-        date: key,
-        vol,
-        label: d.toLocaleDateString(undefined, { weekday: 'short' })[0]
-      });
+      result.push({ date: key, vol, label: d.toLocaleDateString(undefined, { weekday: 'short' })[0] });
     }
     return result;
   }
@@ -184,7 +195,6 @@
     return Array.from(names).sort();
   }
 
-  // ===== Unit conversion =====
   function displayWeight(kg) {
     if (!kg && kg !== 0) return '';
     if (state.settings.unit === 'lb') return Math.round(kg * 2.20462 * 10) / 10;
@@ -199,7 +209,44 @@
   }
   function unitLabel() { return state.settings.unit; }
 
-  // ===== Render ===== 
+  // ===== Hash-based routing =====
+  function tabFromHash() {
+    const hash = (location.hash || '').replace('#', '').toLowerCase();
+    return TABS.includes(hash) ? hash : 'today';
+  }
+
+  function navigateTo(tab) {
+    if (!TABS.includes(tab)) tab = 'today';
+    if (location.hash.replace('#','') !== tab) {
+      location.hash = tab;
+      return; // hashchange listener will call applyTab
+    }
+    applyTab(tab);
+  }
+
+  function applyTab(tab) {
+    currentTab = tab;
+    $$('.nav-btn').forEach(b => {
+      const active = b.dataset.tab === tab;
+      b.classList.toggle('nav-active', active);
+      b.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    TABS.forEach(t => {
+      const view = $('#view-' + t);
+      if (view) view.hidden = (t !== tab);
+    });
+    // Update page title + doc title (multi-page feel)
+    $('#page-title').textContent = TAB_TITLES[tab];
+    document.title = TAB_DOC_TITLES[tab];
+
+    // Re-render charts on tabs that need them (canvas sizing fails while hidden)
+    if (tab === 'today') setTimeout(renderWeeklyChart, 30);
+    if (tab === 'progress') setTimeout(() => renderProgressChart($('#progress-select').value), 30);
+
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  // ===== Render =====
   function render() {
     renderStats();
     renderPlanPrompt();
@@ -224,7 +271,6 @@
     const prompt = $('#plan-prompt');
     const todayPlan = state.plans[todayKey()];
     const started = state.current && hasLoggedSets(state.current);
-
     if (todayPlan && todayPlan.length > 0 && !started) {
       prompt.hidden = false;
       $('#plan-summary').textContent = todayPlan.join(' • ');
@@ -244,7 +290,6 @@
     if (state.current.exercises.length === 0) {
       empty.hidden = false;
       finish.hidden = true;
-      // Show recent exercises as quick suggestions
       const names = getAllExerciseNames().slice(0, 6);
       if (names.length > 0) {
         suggestions.hidden = false;
@@ -316,13 +361,13 @@
     const data = last7DaysVolume();
     const ctx = $('#weekly-chart');
     if (!ctx) return;
+    // Don't render if the today view is hidden (canvas size = 0)
+    if ($('#view-today').hidden) return;
     if (charts.weekly) charts.weekly.destroy();
 
     const textColor = cssVar('--text-2') || '#888';
     const accent = cssVar('--accent') || '#6b5ce7';
     const accentSoft = hexWithAlpha(accent, 0.35);
-
-    // Convert to display unit
     const volumeData = data.map(d => state.settings.unit === 'lb' ? Math.round(d.vol * 2.20462) : d.vol);
 
     charts.weekly = new Chart(ctx, {
@@ -351,11 +396,7 @@
         },
         scales: {
           y: { display: false, beginAtZero: true },
-          x: {
-            ticks: { color: textColor, font: { size: 11 } },
-            grid: { display: false },
-            border: { display: false }
-          }
+          x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false }, border: { display: false } }
         }
       }
     });
@@ -367,7 +408,6 @@
     const list = $('#plan-list');
     const empty = $('#plan-empty');
     list.innerHTML = '';
-
     if (plan.length === 0) {
       empty.hidden = false;
     } else {
@@ -384,7 +424,6 @@
       });
     }
 
-    // Copy from recent
     const copyDiv = $('#copy-from-recent');
     const recent = [...state.workouts].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 3);
     if (recent.length === 0) {
@@ -408,7 +447,6 @@
     const names = getAllExerciseNames();
     const current = select.value;
     select.innerHTML = '';
-
     if (names.length === 0) {
       select.innerHTML = '<option>No exercises yet</option>';
       $('#progress-content').innerHTML = `
@@ -418,14 +456,12 @@
         </div>`;
       return;
     }
-
     names.forEach(n => {
       const opt = document.createElement('option');
       opt.value = n; opt.textContent = n;
       select.appendChild(opt);
     });
     if (current && names.includes(current)) select.value = current;
-
     renderProgressChart(select.value);
   }
 
@@ -460,8 +496,6 @@
     const first = points[0].weight;
     const change = latest - first;
     const changeStr = change >= 0 ? `+${Math.round(displayWeight(change))}` : `${Math.round(displayWeight(change))}`;
-
-    // Simple insight
     const insight = generateInsight(points, name);
 
     content.innerHTML = `
@@ -484,6 +518,9 @@
         <canvas id="progress-chart"></canvas>
       </div>
     `;
+
+    // Only draw chart if view is visible
+    if ($('#view-progress').hidden) return;
 
     setTimeout(() => {
       const ctx = $('#progress-chart');
@@ -517,21 +554,12 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              callbacks: {
-                label: (item) => `${item.parsed.y} ${unitLabel()}`
-              }
+              callbacks: { label: (item) => `${item.parsed.y} ${unitLabel()}` }
             }
           },
           scales: {
-            y: {
-              beginAtZero: false,
-              ticks: { color: textColor, font: { size: 11 } },
-              grid: { color: borderColor }
-            },
-            x: {
-              ticks: { color: textColor, font: { size: 11 } },
-              grid: { display: false }
-            }
+            y: { beginAtZero: false, ticks: { color: textColor, font: { size: 11 } }, grid: { color: borderColor } },
+            x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false } }
           }
         }
       });
@@ -543,22 +571,20 @@
     const recent = points.slice(-3);
     const prior = points.slice(-6, -3);
     if (prior.length === 0) return null;
-
     const recentMax = Math.max(...recent.map(p => p.weight));
     const priorMax = Math.max(...prior.map(p => p.weight));
     const daysSinceLast = daysBetween(points[points.length - 1].date, todayKey());
-
     if (daysSinceLast > 14) {
       return `It's been ${daysSinceLast} days since your last ${escapeHtml(name)}. Time to get back in.`;
     }
     if (recentMax > priorMax) {
       const gain = Math.round(displayWeight(recentMax - priorMax));
-      return `You're trending up — ${gain} ${unitLabel()} stronger over your last few sessions. Keep the progression going.`;
+      return `Trending up — ${gain} ${unitLabel()} stronger over your last few sessions. Keep progressing.`;
     }
     if (recentMax < priorMax) {
-      return `Your recent sessions have been lighter than earlier peaks. This is normal — deloads build long-term strength.`;
+      return `Recent sessions have been lighter than earlier peaks. Deloads are normal — they build long-term strength.`;
     }
-    return `Consistent at ${Math.round(displayWeight(recentMax))} ${unitLabel()}. Consider a small weight increase next session.`;
+    return `Consistent at ${Math.round(displayWeight(recentMax))} ${unitLabel()}. Try a small weight increase next session.`;
   }
 
   function daysBetween(key1, key2) {
@@ -625,12 +651,9 @@
       const exCount = w.exercises.length;
       const setCount = w.exercises.reduce((s, ex) => s + ex.sets.length, 0);
       const exList = w.exercises.map(ex => {
-        const sets = ex.sets
-          .map(s => `${Math.round(displayWeight(s.weight || 0))}×${s.reps || 0}`)
-          .join(', ');
+        const sets = ex.sets.map(s => `${Math.round(displayWeight(s.weight || 0))}×${s.reps || 0}`).join(', ');
         return `<div class="history-ex"><span class="history-ex-name">${escapeHtml(ex.name)}</span> — ${sets || 'no sets'}</div>`;
       }).join('');
-
       const card = document.createElement('div');
       card.className = 'history-card';
       card.innerHTML = `
@@ -645,7 +668,7 @@
     });
   }
 
-  // ===== CSV ===== 
+  // ===== CSV =====
   function exportCSV() {
     const rows = [['date','exercise','set','weight_kg','reps','volume_kg']];
     const all = [...state.workouts].sort((a,b) => a.date.localeCompare(b.date));
@@ -664,12 +687,11 @@
         ? `"${str.replace(/"/g, '""')}"`
         : str;
     }).join(',')).join('\n');
-
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `lift-${todayKey()}.csv`;
+    a.download = `repbot-${todayKey()}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -689,11 +711,9 @@
         const exIdx = header.indexOf('exercise');
         const weightIdx = findHeader(header, ['weight_kg', 'weight']);
         const repsIdx = header.indexOf('reps');
-
         if (dateIdx < 0 || exIdx < 0 || weightIdx < 0 || repsIdx < 0) {
           return showToast('CSV needs: date, exercise, weight, reps');
         }
-
         const byDate = {};
         for (let i = 1; i < lines.length; i++) {
           const cells = parseCSVLine(lines[i]);
@@ -706,17 +726,12 @@
           if (!byDate[date][name]) byDate[date][name] = [];
           byDate[date][name].push({ weight, reps, done: true });
         }
-
         let count = 0;
         Object.keys(byDate).sort().forEach(date => {
-          const exercises = Object.keys(byDate[date]).map(name => ({
-            name,
-            sets: byDate[date][name]
-          }));
+          const exercises = Object.keys(byDate[date]).map(name => ({ name, sets: byDate[date][name] }));
           state.workouts.push({ date, exercises });
           count++;
         });
-
         save();
         render();
         showToast(`Imported ${count} workouts`);
@@ -754,7 +769,7 @@
     return -1;
   }
 
-  // ===== Rest timer ===== 
+  // ===== Rest timer =====
   function startRest(seconds) {
     if (!seconds || seconds <= 0) return;
     restTimer.total = seconds;
@@ -763,7 +778,6 @@
     if (restTimer.interval) clearInterval(restTimer.interval);
     updateRestDisplay();
     restTimer.interval = setInterval(updateRestDisplay, 1000);
-    // Vibrate if supported
     if (navigator.vibrate) navigator.vibrate(20);
   }
 
@@ -786,7 +800,6 @@
     $('#rest-banner').hidden = true;
   }
 
-  // ===== Toast =====
   let toastTimeout = null;
   function showToast(msg) {
     const toast = $('#toast');
@@ -796,14 +809,10 @@
     toastTimeout = setTimeout(() => { toast.hidden = true; }, 2200);
   }
 
-  // ===== Utilities =====
   function $(sel) { return document.querySelector(sel); }
   function $$(sel) { return Array.from(document.querySelectorAll(sel)); }
-  function cssVar(name) {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  }
+  function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
   function hexWithAlpha(color, alpha) {
-    // Handle hex and rgb
     if (color.startsWith('#')) {
       const r = parseInt(color.slice(1, 3), 16);
       const g = parseInt(color.slice(3, 5), 16);
@@ -817,26 +826,9 @@
   }
   function escapeAttr(s) { return escapeHtml(s); }
 
-  // ===== Tab switching =====
-  function switchTab(tab) {
-    $$('.nav-btn').forEach(b => {
-      const active = b.dataset.tab === tab;
-      b.classList.toggle('nav-active', active);
-      b.setAttribute('aria-selected', active ? 'true' : 'false');
-    });
-    ['today', 'plan', 'progress', 'goals', 'history'].forEach(t => {
-      $('#view-' + t).hidden = (t !== tab);
-    });
-    if (tab === 'today') setTimeout(renderWeeklyChart, 30);
-    if (tab === 'progress') setTimeout(() => renderProgressChart($('#progress-select').value), 30);
-    window.scrollTo({ top: 0, behavior: 'instant' });
-  }
-
-  // ===== Menu ===== 
   function openMenu() {
     const sheet = $('#menu-sheet');
     sheet.hidden = false;
-    // Set current values
     $$('[data-unit]').forEach(b => b.classList.toggle('seg-active', b.dataset.unit === state.settings.unit));
     $('#rest-default').value = state.settings.restDefault;
   }
@@ -844,15 +836,24 @@
 
   // ===== Events =====
   function wireEvents() {
-    // Nav
-    $$('.nav-btn').forEach(btn => {
-      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    // Hash routing — primary nav mechanism
+    window.addEventListener('hashchange', () => applyTab(tabFromHash()));
+
+    // Delegate nav clicks through the whole nav container so it works
+    // no matter how the DOM is wrapped. Preventing default because we
+    // want smooth tab switching, not a real navigation.
+    $('#bottom-nav').addEventListener('click', (e) => {
+      const link = e.target.closest('.nav-btn');
+      if (!link) return;
+      e.preventDefault();
+      navigateTo(link.dataset.tab);
     });
 
     // Menu
     $('#menu-btn').addEventListener('click', openMenu);
-    $('#menu-close').addEventListener('click', closeMenu);
-    $('#menu-sheet .sheet-backdrop').addEventListener('click', closeMenu);
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('[data-close-menu]')) closeMenu();
+    });
 
     // Unit toggle
     $$('[data-unit]').forEach(btn => {
@@ -870,14 +871,12 @@
       save();
     });
 
-    // Export / Import
+    // Export / Import / Wipe
     $('#export-btn').addEventListener('click', () => { exportCSV(); closeMenu(); });
     $('#import-btn').addEventListener('click', () => $('#import-file').click());
     $('#import-file').addEventListener('change', (e) => {
       if (e.target.files[0]) { importCSV(e.target.files[0]); e.target.value = ''; }
     });
-
-    // Wipe
     $('#wipe-btn').addEventListener('click', () => {
       if (confirm('Delete all workouts, plans, and goals? This cannot be undone.')) {
         localStorage.removeItem(STORAGE_KEY);
@@ -889,13 +888,11 @@
       }
     });
 
-    // Add exercise (today)
+    // Today
     $('#add-exercise-btn').addEventListener('click', addExercise);
     $('#new-exercise').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') addExercise();
     });
-
-    // Suggestion chips
     $('#exercise-suggestions').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-suggest]');
       if (!btn) return;
@@ -903,29 +900,30 @@
       addExercise();
     });
 
-    // Load planned workout
+    // Load planned workout (inline button now, not at top)
     $('#load-plan-btn').addEventListener('click', () => {
       const plan = state.plans[todayKey()] || [];
+      if (plan.length === 0) return;
       ensureCurrent();
+      let added = 0;
       plan.forEach(name => {
         if (!state.current.exercises.some(ex => ex.name.toLowerCase() === name.toLowerCase())) {
           state.current.exercises.push({ name, sets: [{ weight: 0, reps: 0, done: false }] });
+          added++;
         }
       });
       delete state.plans[todayKey()];
       save();
       render();
       if (navigator.vibrate) navigator.vibrate(30);
+      showToast(`Loaded ${added} exercises`);
     });
 
-    // Exercise list interactions
     $('#exercise-list').addEventListener('click', handleExerciseClick);
     $('#exercise-list').addEventListener('input', handleExerciseInput);
-
-    // Finish workout
     $('#finish-workout-btn').addEventListener('click', finishWorkout);
 
-    // Plan tab
+    // Plan
     $('#add-plan-btn').addEventListener('click', addToPlan);
     $('#new-plan-exercise').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') addToPlan();
@@ -986,7 +984,7 @@
       render();
     });
 
-    // Rest timer
+    // Rest
     $('#rest-add').addEventListener('click', () => {
       restTimer.endsAt += 30000;
       restTimer.total += 30;
@@ -1065,19 +1063,15 @@
       }
       s.done = !s.done;
       save();
-      // Just update the button, don't re-render whole view
       btn.classList.toggle('done', s.done);
-      // Check for PR
       if (s.done) {
         const name = state.current.exercises[exIdx].name;
         const prevPR = lastPRCheck[name] || 0;
         if (s.weight > prevPR) {
           lastPRCheck[name] = s.weight;
-          showToast(`🎯 New PR on ${name}!`);
+          showToast(`New PR on ${name}!`);
         }
-        if (state.settings.restDefault > 0) {
-          startRest(state.settings.restDefault);
-        }
+        if (state.settings.restDefault > 0) startRest(state.settings.restDefault);
         if (navigator.vibrate) navigator.vibrate(30);
       }
       renderStats();
@@ -1092,17 +1086,14 @@
     const sIdx = parseInt(input.dataset.set);
     const field = input.dataset.field;
     const raw = input.value;
-    let val = 0;
-    if (raw !== '') {
-      val = parseFloat(raw);
-      if (isNaN(val)) val = 0;
-    }
-    // For weight, convert lb -> kg
     if (field === 'weight') {
-      state.current.exercises[exIdx].sets[sIdx].weight = state.settings.unit === 'lb'
-        ? (raw === '' ? 0 : inputToKg(raw))
-        : val;
+      state.current.exercises[exIdx].sets[sIdx].weight = raw === '' ? 0 : inputToKg(raw);
     } else {
+      let val = 0;
+      if (raw !== '') {
+        val = parseFloat(raw);
+        if (isNaN(val)) val = 0;
+      }
       state.current.exercises[exIdx].sets[sIdx][field] = val;
     }
     save();
@@ -1116,12 +1107,10 @@
       showToast('Log at least one set first');
       return;
     }
-    // Clean empty sets
     state.current.exercises.forEach(ex => {
       ex.sets = ex.sets.filter(s => s.weight > 0 && s.reps > 0);
     });
     state.current.exercises = state.current.exercises.filter(ex => ex.sets.length > 0);
-
     if (state.current.exercises.length === 0) {
       showToast('No completed sets to save');
       state.current = null;
@@ -1129,7 +1118,6 @@
       render();
       return;
     }
-
     const vol = calcVolume(state.current);
     const volDisplay = state.settings.unit === 'lb' ? Math.round(vol * 2.20462) : vol;
     state.workouts.push(state.current);
@@ -1137,31 +1125,28 @@
     stopRest();
     save();
     render();
-    switchTab('history');
-    showToast(`Workout saved — ${volDisplay.toLocaleString()} ${unitLabel()} lifted 💪`);
+    navigateTo('history');
+    showToast(`Workout saved — ${volDisplay.toLocaleString()} ${unitLabel()} lifted`);
     if (navigator.vibrate) navigator.vibrate([30, 30, 60]);
   }
 
-  // ===== Init =====
   function init() {
     load();
     wireEvents();
     render();
+    // Set initial tab from URL hash (so shared links work)
+    applyTab(tabFromHash());
 
-    // Register service worker for offline
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed', err));
+        navigator.serviceWorker.register('sw.js').catch(() => {});
       });
     }
 
-    // Re-render on theme change
     if (window.matchMedia) {
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
         renderWeeklyChart();
-        if ($('#view-progress').hidden === false) {
-          renderProgressChart($('#progress-select').value);
-        }
+        if (!$('#view-progress').hidden) renderProgressChart($('#progress-select').value);
       });
     }
   }
