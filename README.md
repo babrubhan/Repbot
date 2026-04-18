@@ -1,4 +1,4 @@
-# Lift — Simple gym tracker
+# RepBot — Simple gym tracker
 
 A honest, no-BS gym tracker. Log your lifts, plan tomorrow, own your data.
 
@@ -17,13 +17,6 @@ A honest, no-BS gym tracker. Log your lifts, plan tomorrow, own your data.
 - No ads. No subscriptions.
 - No "AI coach" that nags you.
 - No data sent anywhere. Your phone, your data.
-
-## Tech
-
-Plain HTML, CSS, JavaScript. No build step. No framework. ~40 KB total.
-Chart.js for the graphs (loaded from CDN, cached offline).
-Data persists in `localStorage`. Works offline via service worker.
-Installable as a PWA on iOS and Android.
 
 ## Run locally
 
@@ -63,12 +56,6 @@ Any static host works. The app is pure client-side.
 Menu → Import from CSV. Expected columns: `date, exercise, weight_kg, reps` (extras are ignored).
 Strong and Hevy both export CSVs in compatible formats — just export from them, import here.
 
-## Roadmap
-
-- Apple Watch / Wear OS companion (biggest differentiator)
-- Optional cloud sync via Supabase (keep local-only as default)
-- Plate calculator, 1RM calculator (tiny effort, high value)
-- Plan a whole week, not just tomorrow
 
 ## License
 
