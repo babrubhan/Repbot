@@ -1,0 +1,5 @@
+# Pretty URLs: let users visit /plan instead of /plan.html
+/plan        /plan.html        200
+/progress    /progress.html    200
+/goals       /goals.html       200
+/history     /history.html     200
