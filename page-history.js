@@ -3,7 +3,26 @@
   'use strict';
   const { $, escapeHtml } = RB;
 
+  function renderPlanPrompt() {
+    const prompt = $('#plan-prompt');
+    if (!prompt) return;
+    const todayPlan = RB.state.plans[RB.todayKey()];
+    const current = RB.state.current;
+    const started = current && RB.hasLoggedSets(current);
+    if (todayPlan && todayPlan.length > 0 && !started) {
+      prompt.hidden = false;
+      $('#plan-summary').textContent = todayPlan.join(' • ');
+    } else {
+      prompt.hidden = true;
+    }
+  }
+
   function render() {
+    renderPlanPrompt();
+    renderList();
+  }
+
+  function renderList() {
     const list = $('#history-list');
     const all = [...RB.state.workouts].sort((a,b) => b.date.localeCompare(a.date));
     if (all.length === 0) {
@@ -50,6 +69,29 @@
       RB.save();
       render();
     });
+
+    // Load plan — adds planned exercises to today and redirects to Today page
+    const loadBtn = $('#load-plan-btn');
+    if (loadBtn) {
+      loadBtn.addEventListener('click', () => {
+        const plan = RB.state.plans[RB.todayKey()] || [];
+        if (plan.length === 0) return;
+        const current = RB.ensureCurrent();
+        let added = 0;
+        plan.forEach(name => {
+          if (!current.exercises.some(ex => ex.name.toLowerCase() === name.toLowerCase())) {
+            current.exercises.push({ name, sets: [{ weight: 0, reps: 0, done: false }] });
+            added++;
+          }
+        });
+        delete RB.state.plans[RB.todayKey()];
+        RB.save();
+        if (navigator.vibrate) navigator.vibrate(30);
+        RB.showToast(`Loaded ${added} exercises`);
+        setTimeout(() => { window.location.href = 'index.html'; }, 500);
+      });
+    }
+
     document.addEventListener('repbot:settings-changed', render);
     document.addEventListener('repbot:data-changed', render);
   }

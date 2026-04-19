@@ -158,7 +158,7 @@ ${content}
 
 // ===== Page content definitions =====
 
-const TODAY = `      <section class="view">
+const TODAY = `      <section class="view view-today-compact">
         <div class="stats-row">
           <div class="stat">
             <div class="stat-label">This week</div>
@@ -177,25 +177,17 @@ const TODAY = `      <section class="view">
           </div>
         </div>
 
-        <div class="card">
+        <div class="card card-compact">
           <div class="card-header">
             <div class="card-title">Volume this week</div>
             <div class="card-sub">Last 7 days</div>
           </div>
-          <div class="chart-container"><canvas id="weekly-chart"></canvas></div>
+          <div class="chart-container chart-sm"><canvas id="weekly-chart"></canvas></div>
         </div>
 
         <div class="section-header">
           <h2>Today's workout</h2>
           <span class="section-date" id="today-date"></span>
-        </div>
-
-        <div id="plan-prompt" class="plan-prompt" hidden>
-          <div class="plan-prompt-text">
-            <div class="plan-prompt-title">You planned this</div>
-            <div class="plan-prompt-body" id="plan-summary"></div>
-          </div>
-          <button id="load-plan-btn" class="btn btn-primary btn-sm">Load plan</button>
         </div>
 
         <div id="exercise-list" class="exercise-list"></div>
@@ -269,6 +261,15 @@ const GOALS = `      <section class="view">
 
 const HISTORY = `      <section class="view">
         <div class="section-header"><h2>History</h2></div>
+
+        <div id="plan-prompt" class="plan-prompt" hidden>
+          <div class="plan-prompt-text">
+            <div class="plan-prompt-title">You planned today</div>
+            <div class="plan-prompt-body" id="plan-summary"></div>
+          </div>
+          <button id="load-plan-btn" class="btn btn-primary btn-sm">Load plan</button>
+        </div>
+
         <div id="history-list" class="history-list"></div>
       </section>`;
 

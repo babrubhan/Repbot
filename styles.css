@@ -878,3 +878,57 @@ input::placeholder { color: var(--text-3); }
   outline-offset: 2px;
 }
 button:focus-visible { outline-offset: 2px; }
+
+/* ===== Compact Today page — fits one screen without scrolling ===== */
+.view-today-compact {
+  gap: 12px;
+}
+.view-today-compact .stats-row {
+  gap: 6px;
+}
+.view-today-compact .stat {
+  padding: 10px;
+}
+.view-today-compact .stat-value {
+  font-size: 20px;
+}
+.view-today-compact .stat-label {
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+.view-today-compact .stat-sub {
+  font-size: 10px;
+}
+
+.card-compact {
+  padding: 10px 12px;
+}
+.card-compact .card-header {
+  margin-bottom: 6px;
+}
+.chart-sm {
+  height: 80px;
+}
+
+.view-today-compact .section-header {
+  margin-top: 0;
+}
+.view-today-compact .section-header h2 {
+  font-size: 15px;
+}
+.view-today-compact .section-date {
+  font-size: 12px;
+}
+
+/* Keep exercise cards tight on today */
+.view-today-compact .ex-card {
+  padding: 10px 12px;
+}
+.view-today-compact .empty-state {
+  padding: 1.25rem 1rem;
+}
+.view-today-compact .empty-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 2px;
+}

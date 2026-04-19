@@ -8,7 +8,6 @@
 
   function render() {
     renderStats();
-    renderPlanPrompt();
     renderExercises();
     renderWeeklyChart();
   }
@@ -21,19 +20,6 @@
     $('#stat-volume-unit').textContent = unit + ' lifted';
     $('#stat-streak').textContent = RB.calcStreak();
     $('#today-date').textContent = RB.formatDate(RB.todayKey());
-  }
-
-  function renderPlanPrompt() {
-    const prompt = $('#plan-prompt');
-    const todayPlan = RB.state.plans[RB.todayKey()];
-    const current = RB.state.current;
-    const started = current && RB.hasLoggedSets(current);
-    if (todayPlan && todayPlan.length > 0 && !started) {
-      prompt.hidden = false;
-      $('#plan-summary').textContent = todayPlan.join(' • ');
-    } else {
-      prompt.hidden = true;
-    }
   }
 
   function renderExercises() {
@@ -280,23 +266,6 @@
       if (!btn) return;
       $('#new-exercise').value = btn.dataset.suggest;
       addExercise();
-    });
-    $('#load-plan-btn').addEventListener('click', () => {
-      const plan = RB.state.plans[RB.todayKey()] || [];
-      if (plan.length === 0) return;
-      const current = RB.ensureCurrent();
-      let added = 0;
-      plan.forEach(name => {
-        if (!current.exercises.some(ex => ex.name.toLowerCase() === name.toLowerCase())) {
-          current.exercises.push({ name, sets: [{ weight: 0, reps: 0, done: false }] });
-          added++;
-        }
-      });
-      delete RB.state.plans[RB.todayKey()];
-      RB.save();
-      render();
-      if (navigator.vibrate) navigator.vibrate(30);
-      RB.showToast(`Loaded ${added} exercises`);
     });
     $('#exercise-list').addEventListener('click', handleExerciseClick);
     $('#exercise-list').addEventListener('input', handleExerciseInput);
