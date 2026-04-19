@@ -136,7 +136,7 @@ function page(opts) {
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=4" />
 </head>
 <body class="${bodyClass || ''}">
   <div id="app">
@@ -150,8 +150,8 @@ ${content}
     <div id="toast" class="toast" hidden></div>
   </div>
   ${chartTag}
-  <script src="app.js"></script>
-  <script src="${pageScript}"></script>
+  <script src="app.js?v=4"></script>
+  <script src="${pageScript}?v=4"></script>
 </body>
 </html>`;
 }
@@ -261,15 +261,6 @@ const GOALS = `      <section class="view">
 
 const HISTORY = `      <section class="view">
         <div class="section-header"><h2>History</h2></div>
-
-        <div id="plan-prompt" class="plan-prompt" hidden>
-          <div class="plan-prompt-text">
-            <div class="plan-prompt-title">You planned today</div>
-            <div class="plan-prompt-body" id="plan-summary"></div>
-          </div>
-          <button id="load-plan-btn" class="btn btn-primary btn-sm">Load plan</button>
-        </div>
-
         <div id="history-list" class="history-list"></div>
       </section>`;
 

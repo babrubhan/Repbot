@@ -1,5 +1,5 @@
 // RepBot — Service worker for offline support
-const CACHE = 'repbot-v3';
+const CACHE = 'repbot-v4';
 const ASSETS = [
   './',
   './index.html',
