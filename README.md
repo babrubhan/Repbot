@@ -1,4 +1,4 @@
-# RepBot — RepBot
+# RepBot — Simple gym tracker
 
 A honest, no-BS gym tracker. Log your lifts, plan tomorrow, own your data.
 
