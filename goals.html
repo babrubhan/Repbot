@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f0f10" />
+  <meta name="description" content="RepBot — a simple, honest gym tracker. Log your lifts, plan tomorrow, own your data." />
+  <title>Goals — RepBot</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="">
+  <div id="app">
+    <header class="app-header">
+  <div class="app-header-inner">
+    <a class="brand" href="index.html">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M6 10v4M4 11v2M18 10v4M20 11v2M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span>RepBot</span>
+    </a>
+    <button id="menu-btn" class="icon-btn" aria-label="Menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+        <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+        <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+      </svg>
+    </button>
+  </div>
+</header>
+    <div id="menu-sheet" class="sheet" hidden>
+  <div class="sheet-backdrop" data-close-menu></div>
+  <div class="sheet-panel">
+    <div class="sheet-header">
+      <h3>Settings</h3>
+      <button class="icon-btn" data-close-menu aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Unit</div>
+          <div class="setting-help">Weight display</div>
+        </div>
+        <div class="segmented" role="radiogroup" aria-label="Weight unit">
+          <button class="seg-btn" data-unit="kg">kg</button>
+          <button class="seg-btn" data-unit="lb">lb</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Rest timer</div>
+          <div class="setting-help">Default between sets</div>
+        </div>
+        <select id="rest-default" class="select-inline">
+          <option value="0">Off</option>
+          <option value="60">60s</option>
+          <option value="90">90s</option>
+          <option value="120">2m</option>
+          <option value="180">3m</option>
+          <option value="300">5m</option>
+        </select>
+      </div>
+      <div class="sheet-divider"></div>
+      <button class="row-btn" id="export-btn">
+        <span>Download data (CSV)</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="row-btn" id="import-btn">
+        <span>Import from CSV</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 21V9m0 0l-4 4m4-4l4 4M5 3h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <input type="file" id="import-file" accept=".csv" hidden />
+      <div class="sheet-divider"></div>
+      <button class="row-btn row-btn-danger" id="wipe-btn">
+        <span>Delete all data</span>
+      </button>
+      <div class="sheet-footer">
+        <div>RepBot v0.2 • beta</div>
+        <div>Your data stays on this device.</div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div id="rest-banner" class="rest-banner" hidden>
+  <div class="rest-banner-inner">
+    <div class="rest-timer-text">Rest <span id="rest-remaining">1:30</span></div>
+    <div class="rest-actions">
+      <button id="rest-add">+30s</button>
+      <button id="rest-skip">Skip</button>
+    </div>
+  </div>
+  <div class="rest-progress"><div id="rest-progress-bar"></div></div>
+</div>
+    <main>
+      <section class="view">
+        <div class="section-header"><h2>Goals</h2></div>
+        <div id="goals-list" class="goals-list"></div>
+
+        <div class="card card-soft">
+          <div class="card-title">Add a goal</div>
+          <div class="add-goal-form">
+            <input id="goal-name" type="text" placeholder="Exercise (e.g., Squat)" autocomplete="off" />
+            <div class="add-goal-row">
+              <input id="goal-target" type="number" inputmode="decimal" placeholder="Target weight" />
+              <button id="add-goal-btn" class="btn btn-primary">Set goal</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <nav class="bottom-nav" role="tablist">
+  <div class="bottom-nav-inner">
+    <a class="nav-btn" data-tab="today" href="index.html">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 10v4M4 11v2M18 10v4M20 11v2M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>Today</span>
+    </a>
+    <a class="nav-btn" data-tab="plan" href="plan.html">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M4 9h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>Plan</span>
+    </a>
+    <a class="nav-btn" data-tab="progress" href="progress.html">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 18L9 13L13 17L20 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 10h6v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Progress</span>
+    </a>
+    <a class="nav-btn" data-tab="goals" href="goals.html">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+      <span>Goals</span>
+    </a>
+    <a class="nav-btn" data-tab="history" href="history.html">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>History</span>
+    </a>
+  </div>
+</nav>
+    <div id="toast" class="toast" hidden></div>
+  </div>
+  
+  <script src="app.js"></script>
+  <script src="page-goals.js"></script>
+</body>
+</html>
