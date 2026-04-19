@@ -1,4 +1,7 @@
-# RepBot — Simple gym tracker
+https://repsbot.netlify.app
+
+
+## RepBot: simple gym tracker
 
 A honest, no-BS gym tracker. Log your lifts, plan tomorrow, own your data.
 
@@ -16,16 +19,6 @@ cd repbot
 python3 -m http.server 8000
 # open http://localhost:8000
 ```
-
-## Deploy
-
-Any static host. All 5 pages are just files.
-
-**Cloudflare Pages (free):** push to GitHub → Cloudflare Pages → Connect Git → no build settings needed → live at `*.pages.dev`
-
-**Netlify Drop:** drag the folder to netlify.com/drop → instant URL.
-
-**GitHub Pages:** push to a repo → Settings → Pages → main branch → live at `username.github.io/repo`
 
 ## Importing from other apps
 
