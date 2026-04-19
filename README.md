@@ -2,16 +2,6 @@
 
 A honest, no-BS gym tracker. Log your lifts, plan tomorrow, own your data.
 
-## What's in the box
-
-5 real HTML pages, each with its own URL:
-
-- `index.html` — Today (log workouts, weekly volume chart)
-- `plan.html` — Plan tomorrow's workout
-- `progress.html` — Per-exercise progress charts
-- `goals.html` — Target weights, auto-filling progress bars
-- `history.html` — Past workouts + CSV export (in the menu)
-
 ## What it doesn't do (on purpose)
 
 - No account. No login.
